@@ -236,8 +236,8 @@ module LEGO_BufferStop() {
     height = LEGO_get_track_thickness();
     
     // translate to center
-    cx = -length/2 * (center?1:0);
-    cy = -LEGO_get_unit_length() * (center?1:0);
+    cx = -length/2;
+    cy = -LEGO_get_unit_length();
     
     difference() {
         union() {
@@ -327,8 +327,8 @@ module ZOO() {
     // decorated straight track
     translate([0,  100, 0]) LEGO_Track(1, decorated=true);
     // long ones
-    translate([0, -100, 0]) LEGO_Track(2);
-    translate([0, -200, 0]) LEGO_Track(3);
+    translate([0, -100, 0]) LEGO_Track(2, decorated=true);
+    translate([0, -200, 0]) LEGO_Track(3, decorated=true);
     // short one
     translate([0,  200, 0]) LEGO_Track(0.5);
     // buffer stop
