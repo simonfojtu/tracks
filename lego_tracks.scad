@@ -4,126 +4,51 @@ function LEGO_get_unit_height() = 9.6;
 // thickness of the track, on which the wheels ride
 function LEGO_get_track_thickness() = 6;
 function LEGO_get_wall_height() = LEGO_get_track_thickness();//6.4;
+function LEGO_get_wall_bottom_width() = 31.5;
 function LEGO_get_track_length() = 4 * LEGO_get_unit_length();
 
-// length [mm]
-module LEGO_TrackProfile(length) {
+module LEGO_TrackTopProfileNegative() {
     width = 2 * LEGO_get_unit_length();
-    thickness = LEGO_get_track_thickness();
-    // wall
-    wall_bottom_width = 31.5;
-    wall_top_width = 31.5;//29.2;
-    wall_height = LEGO_get_wall_height();
-    cube([length, width, thickness]);
-    // wall
-    translate([0,width/4,thickness])
-    rotate([90,0,90])
-    linear_extrude(height=length)
-    polygon(points=[
-        [0,0],
-        [wall_bottom_width, 0],
-        [wall_bottom_width-(wall_bottom_width-wall_top_width)/2, wall_height],
-        [(wall_bottom_width-wall_top_width)/2, wall_height]
-    ]);
-}
-
-module LEGO_TrackProfile2() {
-    width = 2 * LEGO_get_unit_length();
-    thickness = LEGO_get_track_thickness();
-    // wall
-    wall_bottom_width = 31.5;
-    wall_top_width = 29.2;
-    wall_height = LEGO_get_wall_height();
-    
-    wb = (width - wall_bottom_width)/2;
-    wt = (width - wall_top_width)/2;
-    
-    module Half() { 
-        polygon(points=[
-            [0, 0],
-            [width/2, 0],
-            [width/2, thickness],
-            [width/2-wb, thickness],
-            [width/2-wt, thickness + wall_height],
-            [0, thickness + wall_height]
-        ]);
-    }
-    
-    Half();
-    rotate([0,180,0]) Half();
-}
-
-// length [mm]
-module LEGO_TrackProfile3(length) {
-    width = 2 * LEGO_get_unit_length();
-    thickness = LEGO_get_track_thickness();
-    // wall
-    wall_bottom_width = 31.5;
-    wall_top_width = 31.5;//29.2;
-    wall_height = LEGO_get_wall_height();
-    
-    module pos() {
-        cube([length, width, thickness+wall_height]);
-        // TODO pin
-    }
-    
-    module neg() {
-        union() {
-        translate([0, 0, thickness]) cube([length, (width-wall_bottom_width)/2, wall_height]);
-        translate([0, width-(width-wall_bottom_width)/2, thickness]) cube([length, (width-wall_bottom_width)/2, wall_height]);
-        }
-    }
-
+    thickness = LEGO_get_wall_height();
+    translate([0.01,0,0]) // hack because the difference between full rectangle and top is slightly thinner than it should be.
     difference() {
-        pos();
-        neg();
+        translate([LEGO_get_track_thickness()+thickness/2, 0, 0]) square(size = [thickness, width], center = true);
+        LEGO_TrackTopProfile();
     }
 }
 
 module LEGO_TrackProfile_negative(length) {
+    translate([-length/2, 0, 0])
+    rotate([0,-90,180])
+    linear_extrude(height=length)
+    LEGO_TrackTopProfileNegative();
+}
+
+module LEGO_TrackBottomProfile() {
     width = 2 * LEGO_get_unit_length();
     thickness = LEGO_get_track_thickness();
-    // wall
-    wall_bottom_width = 31.5;
-    wall_top_width = 31.5;//29.2;
-    wall_height = LEGO_get_wall_height();
-    
-    union() {
-    translate([0, 0, thickness]) cube([length, (width-wall_bottom_width)/2, wall_height]);
-    translate([0, width-(width-wall_bottom_width)/2, thickness]) cube([length, (width-wall_bottom_width)/2, wall_height]);
-    }
+    translate([thickness/2, 0, 0]) square(size = [thickness, width], center = true);
 }
 
 module LEGO_TrackBottom(length) {
-    width = 2 * LEGO_get_unit_length();
-    thickness = LEGO_get_track_thickness();
-   
-    cx = -length/2;
-    cy = -width/2;
-    translate([cx,cy,0]) cube([length, width, thickness]);
+    translate([-length/2, 0, 0])
+    rotate([0,-90,180])
+    linear_extrude(height=length)
+    LEGO_TrackBottomProfile();
+}
+
+module LEGO_TrackTopProfile() {
+    thickness = LEGO_get_wall_height();
+    width = LEGO_get_wall_bottom_width();
+    
+    translate([LEGO_get_track_thickness()+thickness/2, 0, 0]) square(size = [thickness, width], center = true);
 }
 
 module LEGO_TrackTop(length) {
-    width = 2 * LEGO_get_unit_length();
-    thickness = LEGO_get_track_thickness();
-    // wall
-    wall_bottom_width = 31.5;
-    wall_top_width = 31.5;//29.2;
-    wall_height = LEGO_get_wall_height(); 
-    // wall
-    cx = -length/2;
-    cy = -width/2;
-    translate([cx,cy,0]) {
-        translate([0,width/4,thickness])
-        rotate([90,0,90])
-        linear_extrude(height=length)
-        polygon(points=[
-            [0,0],
-            [wall_bottom_width, 0],
-            [wall_bottom_width-(wall_bottom_width-wall_top_width)/2, wall_height],
-            [(wall_bottom_width-wall_top_width)/2, wall_height]
-        ]);
-    }
+    translate([-length/2, 0, 0])
+    rotate([0,-90,180])
+    linear_extrude(height=length)
+    LEGO_TrackTopProfile();
 }
 
 
@@ -215,7 +140,13 @@ module LEGO_Curve(left=true) {
     difference() {
         union() {
             rotate([0, 0, rz]) translate([-curve_radius,0,0])
-                rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) LEGO_TrackProfile2(1);
+                rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) 
+            {
+                rotate([0,0,90]) {
+                    LEGO_TrackTopProfile();
+                    LEGO_TrackBottomProfile();
+                }
+            }
             LEGO_TrackConnector_Pin();
             translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Pin();
         }
@@ -281,7 +212,6 @@ module LEGO_TrackCrossings(
             union() {
                 for ( i = [0 : N-1] ){
                     rotate([0,0, i * angle])
-                    translate([cx,cy,0]) 
                     LEGO_TrackProfile_negative(length);
                 }
             }
@@ -293,6 +223,7 @@ module LEGO_TrackCrossings(
 
 
 module LEGO_Turntable(angle = 60, N = 3, unit_length = 2) {
+    inner_track_angle = 0;
     if (unit_length <= 1) {
         echo("LEGO_Turntable: unit_length must be greater than 1");
     }
@@ -304,20 +235,33 @@ module LEGO_Turntable(angle = 60, N = 3, unit_length = 2) {
             LEGO_TrackCrossings(angle=angle, N=N, unit_length=unit_length, center=true, assembled=true);
             translate([0,0, LEGO_get_track_thickness()/2]) cylinder(r=length/2*1.1, h=LEGO_get_track_thickness(),center=true,$fn=80);
         }
-        
         translate([0, 0, (LEGO_get_wall_height() + LEGO_get_track_thickness())/2])
-            cylinder(r=length/2,h=LEGO_get_track_thickness() + LEGO_get_wall_height(),center=true,$fn = 80);
+        cylinder(r=length/2,h=LEGO_get_track_thickness() + LEGO_get_wall_height(),center=true,$fn = 80);
     }
-
+        
     // inner track
     length_ = length-4;
-    rotate([0,0,10])
+    cx = -length/2;
+    cy = -LEGO_get_unit_length();
+    rotate([0,0,inner_track_angle])
     intersection() {
         LEGO_TrackTop(length_, center=true);
         cylinder(r=length_/2,h=10*LEGO_get_wall_height(),center=true,$fn = 80);
     }
+    // base plate
     translate([0, 0, LEGO_get_track_thickness()/2])
-            cylinder(r=length_/2,h=LEGO_get_track_thickness(),center=true,$fn = 80);
+        cylinder(r=length_/2,h=LEGO_get_track_thickness(),center=true,$fn = 80);
+    // rim
+    difference() {
+    translate([0, 0, LEGO_get_track_thickness()+LEGO_get_wall_height()/2])
+        difference() {
+            cylinder(r=length_/2,  h=LEGO_get_wall_height(),center=true,$fn = 80);
+            cylinder(r=length_/2-6,h=LEGO_get_wall_height(),center=true,$fn = 80);
+        }
+        rotate([0,0, inner_track_angle])
+        translate([cx,cy,0]) 
+        LEGO_TrackProfile_negative(length);
+    }
 }
 
 module ZOO() {
@@ -327,10 +271,10 @@ module ZOO() {
     // decorated straight track
     translate([0,  100, 0]) LEGO_Track(1, decorated=true);
     // long ones
-    translate([0, -100, 0]) LEGO_Track(2, decorated=true);
-    translate([0, -200, 0]) LEGO_Track(3, decorated=true);
-    // short one
-    translate([0,  200, 0]) LEGO_Track(0.5);
+//    translate([0, -100, 0]) LEGO_Track(2, decorated=true);
+//    translate([0, -200, 0]) LEGO_Track(3, decorated=true);
+//    // short one
+//    translate([0,  200, 0]) LEGO_Track(0.5);
     // buffer stop
     translate([0,  300, 0]) LEGO_BufferStop();
     // curve
@@ -338,10 +282,10 @@ module ZOO() {
 
 
     // 2 way 60deg crossing of normal length
-    translate([200, 0, 0]) LEGO_TrackCrossings(angle=60, N=2, unit_length=1, center=true, assembled=true);
-    
-    // 2 way 90deg crossing of normal length
-    translate([200, 200, 0]) LEGO_TrackCrossings(angle=90, N=2, unit_length=1, center=true, assembled=true);
+//    translate([200, 0, 0]) LEGO_TrackCrossings(angle=60, N=2, unit_length=1, center=true, assembled=true);
+//    
+//    // 2 way 90deg crossing of normal length
+//    translate([200, 200, 0]) LEGO_TrackCrossings(angle=90, N=2, unit_length=1, center=true, assembled=true);
     
     // 3 way 60deg crossing of normal length
     translate([200, 400, 0]) LEGO_TrackCrossings(angle=60, N=3, unit_length=1, center=true, assembled=true);
@@ -350,8 +294,8 @@ module ZOO() {
     // turntable 3-way
     translate([500, 0, 0]) LEGO_Turntable(angle = 60, N = 3);
     
-    // turntable 7-way
-    translate([500, 300, 0]) LEGO_Turntable(angle = 30, N = 7);
+//    // turntable 7-way
+//    translate([500, 300, 0]) LEGO_Turntable(angle = 30, N = 7);
     
 }
 
@@ -366,4 +310,59 @@ module cut2(dx=0, dy=0) {
             children(0);
 }
 
-ZOO();
+module LEGO_Switch() {
+    curve_radius = 450/2;
+//    one = (left ? 1 : -1);
+    
+    difference() {
+        union() {
+            for (one=[-1,1]) {
+                angle = 30 * one;
+                rz = - 90 * one;
+                rotate([0, 0, rz]) translate([-curve_radius,0,0])
+                    rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) 
+                {
+                    rotate([0,0,90]) {
+                        LEGO_TrackTopProfile();
+                        LEGO_TrackBottomProfile();
+                    }
+                }
+            }
+        }
+        union() {
+            for (one=[-1,1]) {
+                angle = 30 * one;
+                rz = - 90 * one;
+                rotate([0, 0, rz]) translate([-curve_radius,0,0])
+                    rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) 
+                {
+                    rotate([0,0,90]) {
+                        LEGO_TrackTopProfileNegative();
+                    }
+                }
+            }
+            LEGO_TrackConnector_Hole();
+            for (one=[-1,1]) {
+                angle = 30 * one;
+                translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Hole();
+            }
+        }
+    }
+    LEGO_TrackConnector_Pin();
+    for (one=[-1,1]) {
+        angle = 30 * one;
+        translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Pin();
+    }
+}
+
+
+//cut2(1000,0)
+//ZOO();
+
+// TODO switch
+LEGO_Switch();
+
+//LEGO_Track(2);
+
+//fab_201701212219();
+
