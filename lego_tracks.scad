@@ -259,7 +259,6 @@ module LEGO_Turntable(angle = 60, N = 3, unit_length = 2) {
             cylinder(r=length_/2-6,h=LEGO_get_wall_height(),center=true,$fn = 80);
         }
         rotate([0,0, inner_track_angle])
-        translate([cx,cy,0]) 
         LEGO_TrackProfile_negative(length);
     }
 }
