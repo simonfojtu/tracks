@@ -264,6 +264,103 @@ module LEGO_Turntable(angle = 60, N = 3, unit_length = 2) {
     }
 }
 
+module LEGO_Switch() {
+    curve_radius = 450/2;
+    // blade rotation axis position
+    tx=-90;
+    ty=-25;
+    // blade tip thickness as a function of the az angle
+    az=7;
+    // rotate extrude profile at curve radius
+    module curve(one=1) {
+        angle = 30 * one;
+        rz = - 90 * one;
+        rotate([0, 0, rz])
+        translate([-curve_radius,0,0])
+        rotate_extrude(angle=angle, $fn=200)
+        translate([curve_radius,0,0]) 
+        rotate([0,0,90])
+        children(0);
+    }
+    // base plate
+    module bottom(one=1) {
+        curve(one)
+        LEGO_TrackBottomProfile();
+        translate([10,0,0]) cube([30,50,2*LEGO_get_track_thickness()], center=false);
+    }
+    // top middle section
+    module top(one=1) {
+        curve(one)
+        LEGO_TrackTopProfile();
+    }
+    // top negative of middle section
+    module top_negative(one=1) {
+        curve(one)
+        LEGO_TrackTopProfileNegative();
+    }
+    
+    module blade(angle=0, dilate=2) {
+
+        translate([0,0,LEGO_get_track_thickness()])
+        linear_extrude(height = LEGO_get_track_thickness())
+        offset(r = dilate)
+        projection(cut=true)
+        translate([-tx,-ty,-1.1*LEGO_get_track_thickness()]) {
+            rotate([0,0,angle])
+            difference() {
+                union() {
+                    dx=70; // length of blade from axis to tip
+                    translate([-dx/2,0,1.5*LEGO_get_track_thickness()]) cube([dx, 30, LEGO_get_track_thickness()], center=true);
+                    translate([0,0.6,LEGO_get_track_thickness()])
+        cylinder(r=9.75, h=LEGO_get_track_thickness());
+                }
+                union() {
+                    rotate([0,0,-az]) translate([tx,ty,0]) top_negative(1);
+                    rotate([0,0,az]) translate([tx,ty,0]) top_negative(-1);
+                }
+            }
+        }
+    }
+    
+    difference() {
+        union() {
+            difference() {
+                union() {
+                    for (one=[-1,1]) {
+                        top(one);
+                        bottom(one);
+                    }
+                }
+                union() {
+                    for (one=[-1,1]) {
+                        top_negative(one);
+                    }
+                    LEGO_TrackConnector_Hole();
+                    for (one=[-1,1]) {
+                        angle = 30 * one;
+                        translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Hole();
+                    }
+                }
+            }
+            // connector pins
+            LEGO_TrackConnector_Pin();
+            for (one=[-1,1]) {
+                angle = 30 * one;
+                translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Pin();
+            }
+        }
+        union() {
+            for (a=[-az-1:az+1])
+            blade(a);
+            translate([-tx,-ty,LEGO_get_track_thickness()/2]) cylinder(r=2, h=LEGO_get_track_thickness(), center=true,$fs = 0.01);
+        }
+    }
+    difference() {
+        blade(angle=0, dilate=1); // limit angle: angle = +-(az+2)
+        translate([-tx,-ty,1.5*LEGO_get_track_thickness()]) cylinder(r=2, h=LEGO_get_track_thickness(), center=true,$fs = 0.01);
+    }
+}
+
 module ZOO() {
     // ZOO of implemented modules with different arguments
     // straight track
@@ -271,10 +368,10 @@ module ZOO() {
     // decorated straight track
     translate([0,  100, 0]) LEGO_Track(1, decorated=true);
     // long ones
-//    translate([0, -100, 0]) LEGO_Track(2, decorated=true);
-//    translate([0, -200, 0]) LEGO_Track(3, decorated=true);
-//    // short one
-//    translate([0,  200, 0]) LEGO_Track(0.5);
+    translate([0, -100, 0]) LEGO_Track(2, decorated=true);
+    translate([0, -200, 0]) LEGO_Track(3, decorated=true);
+    // short one
+    translate([0,  200, 0]) LEGO_Track(0.5);
     // buffer stop
     translate([0,  300, 0]) LEGO_BufferStop();
     // curve
@@ -282,10 +379,10 @@ module ZOO() {
 
 
     // 2 way 60deg crossing of normal length
-//    translate([200, 0, 0]) LEGO_TrackCrossings(angle=60, N=2, unit_length=1, center=true, assembled=true);
-//    
-//    // 2 way 90deg crossing of normal length
-//    translate([200, 200, 0]) LEGO_TrackCrossings(angle=90, N=2, unit_length=1, center=true, assembled=true);
+    translate([200, 0, 0]) LEGO_TrackCrossings(angle=60, N=2, unit_length=1, center=true, assembled=true);
+    
+    // 2 way 90deg crossing of normal length
+    translate([200, 200, 0]) LEGO_TrackCrossings(angle=90, N=2, unit_length=1, center=true, assembled=true);
     
     // 3 way 60deg crossing of normal length
     translate([200, 400, 0]) LEGO_TrackCrossings(angle=60, N=3, unit_length=1, center=true, assembled=true);
@@ -294,8 +391,11 @@ module ZOO() {
     // turntable 3-way
     translate([500, 0, 0]) LEGO_Turntable(angle = 60, N = 3);
     
-//    // turntable 7-way
-//    translate([500, 300, 0]) LEGO_Turntable(angle = 30, N = 7);
+    // turntable 7-way
+    translate([500, 300, 0]) LEGO_Turntable(angle = 30, N = 7);
+    
+    // switch
+    translate([800, 0, 0]) LEGO_Switch();
     
 }
 
@@ -310,59 +410,13 @@ module cut2(dx=0, dy=0) {
             children(0);
 }
 
-module LEGO_Switch() {
-    curve_radius = 450/2;
-//    one = (left ? 1 : -1);
-    
-    difference() {
-        union() {
-            for (one=[-1,1]) {
-                angle = 30 * one;
-                rz = - 90 * one;
-                rotate([0, 0, rz]) translate([-curve_radius,0,0])
-                    rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) 
-                {
-                    rotate([0,0,90]) {
-                        LEGO_TrackTopProfile();
-                        LEGO_TrackBottomProfile();
-                    }
-                }
-            }
-        }
-        union() {
-            for (one=[-1,1]) {
-                angle = 30 * one;
-                rz = - 90 * one;
-                rotate([0, 0, rz]) translate([-curve_radius,0,0])
-                    rotate_extrude(angle=angle, $fn=200) translate([curve_radius,0,0]) 
-                {
-                    rotate([0,0,90]) {
-                        LEGO_TrackTopProfileNegative();
-                    }
-                }
-            }
-            LEGO_TrackConnector_Hole();
-            for (one=[-1,1]) {
-                angle = 30 * one;
-                translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Hole();
-            }
-        }
-    }
-    LEGO_TrackConnector_Pin();
-    for (one=[-1,1]) {
-        angle = 30 * one;
-        translate([0, one * curve_radius, 0]) rotate([0,0,angle]) translate([0, -one * curve_radius, 0]) rotate([0, 0, 180]) LEGO_TrackConnector_Pin();
-    }
+
+module fillet(r) {
+   offset(r = -r) {
+     offset(delta = r) {
+       children();
+     }
+   }
 }
 
-
-//cut2(1000,0)
 //ZOO();
-
-// TODO switch
-LEGO_Switch();
-
-//LEGO_Track(2);
-
-//fab_201701212219();
-
