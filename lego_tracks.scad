@@ -6,9 +6,10 @@ function LEGO_get_track_thickness() = 6;
 function LEGO_get_wall_height() = LEGO_get_track_thickness();//6.4;
 function LEGO_get_wall_bottom_width() = 31.5;
 function LEGO_get_track_length() = 4 * LEGO_get_unit_length();
+function LEGO_get_curve_radius() = 286.5 - LEGO_get_unit_length(); // from center of tracks
 
-module LEGO_TrackTopProfileNegative() {
-    width = 2 * LEGO_get_unit_length();
+module LEGO_TrackTopProfileNegative(full=false) {
+    width = (full ? 2 * LEGO_get_unit_length() : 54);
     thickness = LEGO_get_wall_height();
     translate([0.01,0,0]) // hack because the difference between full rectangle and top is slightly thinner than it should be.
     difference() {
@@ -131,7 +132,7 @@ module LEGO_Track(unit_length, center=true, decorated=false) {
 }
 
 module LEGO_Curve(left=true) {
-    curve_radius = 450/2;
+    curve_radius = LEGO_get_curve_radius();
     one = (left ? 1 : -1);
     angle = 30 * one;
     rz = - 90 * one;
@@ -264,12 +265,12 @@ module LEGO_Turntable(angle = 60, N = 3, unit_length = 2) {
 }
 
 module LEGO_Switch() {
-    curve_radius = 450/2;
+    curve_radius = LEGO_get_curve_radius();
     // blade rotation axis position
     tx=-90;
-    ty=-25;
+    ty=-22;
     // blade tip thickness as a function of the az angle
-    az=7;
+    az=5;
     // rotate extrude profile at curve radius
     module curve(one=1) {
         angle = 30 * one;
@@ -295,7 +296,7 @@ module LEGO_Switch() {
     // top negative of middle section
     module top_negative(one=1) {
         curve(one)
-        LEGO_TrackTopProfileNegative();
+        LEGO_TrackTopProfileNegative(full=false);
     }
     
     module blade(angle=0, dilate=2) {
@@ -309,13 +310,13 @@ module LEGO_Switch() {
             difference() {
                 union() {
                     dx=70; // length of blade from axis to tip
-                    translate([-dx/2,0,1.5*LEGO_get_track_thickness()]) cube([dx, 30, LEGO_get_track_thickness()], center=true);
+                    translate([-dx/2,0,1.5*LEGO_get_track_thickness()]) cube([dx, 22, LEGO_get_track_thickness()], center=true);
                     translate([0,0.6,LEGO_get_track_thickness()])
-        cylinder(r=9.75, h=LEGO_get_track_thickness());
+        cylinder(r=11, h=LEGO_get_track_thickness());
                 }
                 union() {
-                    rotate([0,0,-az]) translate([tx,ty,0]) top_negative(1);
-                    rotate([0,0,az]) translate([tx,ty,0]) top_negative(-1);
+                    rotate([0,0,-az]) translate([tx,ty,0]) curve(1)        LEGO_TrackTopProfileNegative(full=false);
+                    rotate([0,0,az]) translate([tx,ty,0]) curve(-1) LEGO_TrackTopProfileNegative(full=false);
                 }
             }
         }
