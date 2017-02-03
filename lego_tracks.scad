@@ -282,11 +282,24 @@ module LEGO_Switch() {
         rotate([0,0,90])
         children(0);
     }
+    module blade_stop() {
+        x = 30;
+        y = 20;
+        h = 2* LEGO_get_track_thickness();
+        r = 5;
+        translate([10,32,0])
+        hull() {
+            translate([x-r,0,0]) cylinder(r=r, h=h);
+            translate([x-r,y-r,0]) cylinder(r=r, h=h);
+            translate([0,y-r,0]) cylinder(r=r, h=h);
+            translate([0,0,0]) cylinder(r=r, h=h);
+        }
+    }
     // base plate
     module bottom(one=1) {
         curve(one)
         LEGO_TrackBottomProfile();
-        translate([10,0,0]) cube([30,50,2*LEGO_get_track_thickness()], center=false);
+        blade_stop();
     }
     // top middle section
     module top(one=1) {
@@ -355,6 +368,7 @@ module LEGO_Switch() {
             translate([-tx,-ty,LEGO_get_track_thickness()/2]) cylinder(r=2, h=LEGO_get_track_thickness(), center=true,$fs = 0.01);
         }
     }
+    // pin / rotation axis
     difference() {
         blade(angle=0, dilate=1); // limit angle: angle = +-(az+2)
         translate([-tx,-ty,1.5*LEGO_get_track_thickness()]) cylinder(r=2, h=LEGO_get_track_thickness(), center=true,$fs = 0.01);
